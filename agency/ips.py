@@ -7,7 +7,7 @@ from lxml.html import etree
 """
 XICI_API = "http://www.xicidaili.com/nn/"
 User_Agent ="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36"
-
+IHUAN_API = "https://ip.ihuan.me/anonymity/2.html?page=1"
 class proxy:
     def __init__(self):
         self.proxy_list =[]
@@ -35,6 +35,39 @@ class proxy:
                     ip_temp = '{}:{}'.format(ip,port)
                     print(ip_temp)
                     self.proxy_list.append(ip_temp)
+
+    def get_proxy_from_ihuan(self):
+        """
+        获取为加工的代理
+        :return:
+        """
+
+        headers = dict()
+        headers["User-Agent"] = User_Agent
+        url = IHUAN_API
+        load = True
+        page = 1
+        while load:
+            res = requests.get(url,headers=headers).content
+            sel = etree.HTML(text=res)
+            trs = sel.xpath("//div[@class='table-responsive']/table//tr")
+            for tr in trs[1:]:
+                ip = tr.xpath('td[1]/a/text()')[0]
+                port = tr.xpath('td[2]/text()')[0]
+                ip_temp = "{}:{}".format(ip,port)
+                print(ip_temp)
+                self.proxy_list.append(ip_temp)
+            if sel.xpath("//a[@aria-label='Next']/@href") and page<20:
+                next_url = sel.xpath("//a[@aria-label='Next']/@href")[0]
+                url = urljoin(url,next_url)
+                page+=1
+            else:
+                load = False
+
+            pass
+        pass
+
+
 
     def filter_proxy(self):
         """
@@ -69,5 +102,5 @@ class proxy:
 
 if __name__ =="__main__":
     p = proxy()
-    p.get_proxy_from_xici()
+    p.get_proxy_from_ihuan()
     p.filter_proxy()
